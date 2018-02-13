@@ -6,11 +6,11 @@ const mongoose = require('mongoose');
 app.use(express.static(__dirname+'/client'));
 app.use(bodyParser.json());
 
-
+var port = process.env.PORT || 3000;
 Ticket =require('./models/ticket');
 
 // Connect to Mongoose
-mongoose.connect('mongodb://localhost/TicketInfo');
+mongoose.connect('mongodb://manishjathan22:Manish_1@ds233218.mlab.com:33218/ticketinfo');
 var db = mongoose.connection;
 
 app.get('/', (req, res) => {
@@ -69,5 +69,5 @@ app.delete('/api/tickets/:_id', (req, res) => {
 
 
 
-app.listen(3000);
-console.log('Running on port 3000...');
+app.listen(port);
+console.log('Running on port 3000');
