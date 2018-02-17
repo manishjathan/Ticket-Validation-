@@ -41,8 +41,11 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -98,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if(!objectId.equals("Scan Failed: Found nothing to scan")){
-                    System.out.println("Make a call");
+                    System.out.println("Make a GET request");
                     System.out.println("https://qrnodeapi.herokuapp.com/api/tickets/" + objectId);
                     getObject(objectId);
                 }
                 else{
-                    System.out.println("Don't Make a Call");
+                    System.out.println("Don't Make a GET request");
                 }
                 getObject(objectId);
             }
@@ -302,19 +305,41 @@ public class MainActivity extends AppCompatActivity {
                         //Checking ticket for the first time
                         if(isTicketChecked == false){
                             isTicketChecked = true;
-                            if(stations.get(currentDestination) >= stations.get(source) && stations.get(currentDestination) <= stations.get(destination)) {
-                                isTicketValidated = true;
-                                updateIsTicketValidated(name, isTicketChecked, isTicketValidated,source,destination, journeyType, fare, expiry,objectId);
-                                sendSms(objectId,mobno);
-                                Toast.makeText(MainActivity.this, "Ticket Checked and Validated", Toast.LENGTH_SHORT).show();
+                            int currStationIndex = stations.get(currentDestination);
+                            int sourceIndex = stations.get(source);
+                            int destinationIndex = stations.get(destination);
+                            String expiryDate = expiry.substring(0,10); //2018-02-08T00:00:00.000Z
+                            switch(journeyType){
+                                case "Single":
+                                                if( currStationIndex >= sourceIndex  && currStationIndex <= destinationIndex && checkDate(expiryDate)){
+                                                    isTicketValidated = true;
+                                                    updateIsTicketValidated(name, isTicketChecked, isTicketValidated,source,destination, journeyType, fare, expiry,objectId);
+                                                    sendSms(objectId,mobno);
+                                                    Toast.makeText(MainActivity.this, "Ticket Checked and Validated", Toast.LENGTH_SHORT).show();
+                                                }
+                                                else{
+                                                    Toast.makeText(MainActivity.this, "Invalid Ticket", Toast.LENGTH_SHORT).show();
+                                                }
+                                                break;
+                                case "Return":
+                                                if( ((currStationIndex >= sourceIndex  && currStationIndex <= destinationIndex) ||
+                                                        (currStationIndex >= destinationIndex  && currStationIndex <= sourceIndex))&&
+                                                        checkDate(expiryDate)){
+                                                isTicketValidated = true;
+                                                updateIsTicketValidated(name, isTicketChecked, isTicketValidated,source,destination, journeyType, fare, expiry,objectId);
+                                                sendSms(objectId,mobno);
+                                                Toast.makeText(MainActivity.this, "Ticket Checked and Validated", Toast.LENGTH_SHORT).show();
+                                                }
+                                                else{
+                                                Toast.makeText(MainActivity.this, "Invalid Ticket", Toast.LENGTH_SHORT).show();
+                                                }
+                                                 break;
                             }
-                            else{
-                                Toast.makeText(MainActivity.this, "Invalid Ticket", Toast.LENGTH_SHORT).show();
-                            }
+
+
                         }
                         //Ticket already checked
                         else{
-                            //sendSms(objectId);
                             Toast.makeText(MainActivity.this, "Ticket Already Checked", Toast.LENGTH_SHORT).show();
                         }
 
@@ -352,10 +377,6 @@ public class MainActivity extends AppCompatActivity {
             // handle exception
         }
 
-
-            /*
-            {"isTicketChecked":true,"isTicketValidated":true,"_id":"5a7bbb3ce6cb753d7d5f04ee","Name":"Manish Jathan","source":"Goregaon","destination":"Andheri","journeyType":"return","fare":"20","expiry":"2018-02-08T00:00:00.000Z"}
-            */
         String url = "https://qrnodeapi.herokuapp.com/api/tickets/" + id;
         JsonObjectRequest putRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonObject,
                 new Response.Listener<JSONObject>() {
@@ -420,7 +441,27 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    private boolean checkDate(String expiryDateString){
 
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date date = null;
+        try {
+            date = sdf.parse(expiryDateString);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        Calendar expiryDate = Calendar.getInstance();
+        expiryDate.setTime(date);
+        Calendar currentDate = Calendar.getInstance();
+        if(currentDate.compareTo(expiryDate) <= 0) {
+            System.out.println("Ticket is valid");
+            return true;
+        }else{
+            System.out.println("Ticket is not valid");
+            return false;
+        }
+
+    }
 
     private void takePicture() {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
