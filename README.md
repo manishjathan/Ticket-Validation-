@@ -8,3 +8,6 @@ expiry date of the ticket.
 * If validation is successful then it makes a PUT request to the server and sets the flags related to checking and validation. viz(isTicketChecked and isTicketValidated)
 * It also sends an sms to the ticket user regarding the validation of ticket.
 * If validation is unsuccessful then it just sets the isTicketChecked flag true.
+## QRNodeAPI
+* This API helps to connect to the mongo server.
+* It contains various HTTP request handlers like GET,POST,PUT and DELETE.
